@@ -91,14 +91,13 @@ find /usr/include -name crop_box.h
 
 ## Images
 
-### Camera image
-<img src="img/lidar_cluster_a2_urban.gif" width="48%">
-<img src="img/lidar_cluster_a1_race.gif" width="48%">
+> [!NOTE]  
+> The following images shows two possible usage of clustering: an uban scenario and a race scenario.
+> The first row shows a camera image that corresponds to the LIDAR image in the second row. In the third row an example is shown of the clustered LIDAR pointcloud with yellow.
 
-### LIDAR pointcloud
-<img src="img/lidar_cluster_b2_urban.gif" width="48%">
-<img src="img/lidar_cluster_b1_race.gif" width="48%">
 
-### Clustered LIDAR pointcloud
-<img src="img/lidar_cluster_c2_urban.gif" width="48%">
-<img src="img/lidar_cluster_c1_race.gif" width="48%">
+| Urban scenario | Race scenario |
+|:---:|:---:|
+<img src="img/lidar_cluster_a2_urban.gif" width="100%"> | <img src="img/lidar_cluster_a1_race.gif" width="100%"> 
+<img src="img/lidar_cluster_b2_urban.gif" width="100%"> | <img src="img/lidar_cluster_b1_race.gif" width="100%">
+<img src="img/lidar_cluster_c2_urban.gif" width="100%"> | <img src="img/lidar_cluster_c1_race.gif" width="100%"> 
