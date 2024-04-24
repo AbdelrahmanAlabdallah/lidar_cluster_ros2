@@ -1,7 +1,7 @@
 # `lidar_cluster` ROS 2 package
 LIDAR pointcloud clustering in `ROS 2` `Humble`
 
-[![Static Badge](https://img.shields.io/badge/ROS_2-Humble-blue)](https://docs.ros.org/en/humble/)
+[![Static Badge](https://img.shields.io/badge/ROS_2-Humble-34aec5)](https://docs.ros.org/en/humble/)
 
 
 ## Build this `ROS 2` package
@@ -88,3 +88,17 @@ If you are not sure where your header files are use e.g.:
 find /usr/include -name point_cloud.h
 find /usr/include -name crop_box.h
 ```
+
+## Images
+
+### Camera image
+<img src="img/lidar_cluster_a2_urban.gif" width="48%">
+<img src="img/lidar_cluster_a1_race.gif" width="48%">
+
+### LIDAR pointcloud
+<img src="img/lidar_cluster_b2_urban.gif" width="48%">
+<img src="img/lidar_cluster_b1_race.gif" width="48%">
+
+### Clustered LIDAR pointcloud
+<img src="img/lidar_cluster_c2_urban.gif" width="48%">
+<img src="img/lidar_cluster_c1_race.gif" width="48%">
