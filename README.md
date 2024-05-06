@@ -60,6 +60,14 @@ graph LR;
 | `eucledian_grid` | Eucledian | grid| PCL implementation of Eucledian clustering voxel-grid-based implementation | [PCL docs](https://pointclouds.org/documentation/group__segmentation.html) |
 
 
+<details>
+<summary> Don't forget to source before ROS commands.</summary>
+
+``` bash
+source ~/ros2_ws/install/setup.bash
+```
+</details>
+
 ``` bash
 ros2 run lidar_cluster dblane_spatial
 ```

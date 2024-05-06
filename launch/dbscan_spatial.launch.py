@@ -4,7 +4,6 @@ from launch_ros.actions import Node
 from launch import LaunchDescription
 from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument
-import os
 
 def generate_launch_description():
 

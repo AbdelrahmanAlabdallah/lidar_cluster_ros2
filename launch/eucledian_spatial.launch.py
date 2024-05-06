@@ -4,7 +4,6 @@ from launch_ros.actions import Node
 from launch import LaunchDescription
 from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument
-import os
 
 def generate_launch_description():
 
@@ -20,6 +19,7 @@ def generate_launch_description():
                 {'points_in_topic': LaunchConfiguration("topic")},
                 {'points_out_topic': 'clustered_points'},
                 {'marker_out_topic': 'clustered_marker'},
+                {'tolerance': 0.8},
                 {'verbose1': True},
             ]
         )
