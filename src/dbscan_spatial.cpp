@@ -1,12 +1,12 @@
 // Non-grid (spatial) DBSCAN filter for point cloud data
 // The DBSCAN (Density-Based Spatial Clustering of Applications with Noise) algorithm is a popular clustering algorithm in machine learning
 
-#include <chrono>
 #include <functional>
 #include <memory>
-#include <string>
 #include <cmath>
 #include <vector>
+#include <queue>
+#include <algorithm>
 // ROS
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
@@ -19,12 +19,13 @@
 #include <pcl/filters/crop_box.h>
 // ROS package
 #include "lidar_cluster/marker.hpp"
+// Benchmarking
+#include "benchmark.hpp"
+// TBB
+#include <tbb/tbb.h>
 
-using namespace std::chrono_literals;
-using std::placeholders::_1;
-
-class Point
-{
+// Point class, which stores the x and y coordinates of a point, the number of neighbors, whether it is a core point, and the cluster ID
+class Point {
 public:
   double x, y;
   int neighbor_pts = 0;
@@ -39,69 +40,187 @@ public:
   */
 };
 
-double distance(const Point &p1, const Point &p2)
-{
-  return std::sqrt(std::pow(p1.x - p2.x, 2) + std::pow(p1.y - p2.y, 2));
+// Function to calculate the Euclidean distance between two points
+double distance(const Point &p1, const Point &p2) {
+  double dx = p1.x - p2.x;
+  double dy = p1.y - p2.y;
+  return std::sqrt(dx * dx + dy * dy);
 }
 
-void find_neighbors(std::vector<Point> &points, double eps)
-{
-  for (Point &p : points)
-  {
-    for (const Point &q : points)
-    {
-      if (distance(p, q) <= eps)
-      {
-        p.neighbor_pts++;
-      }
+// For neighbor searching, instead of brute force, we use a KD-tree
+// KD-tree node, which stores a point and pointers to left and right children
+struct Node {
+  Point point;
+  Node* left;
+  Node* right;
+};
+
+// Build a KD-tree from a given point cloud(vector of points)
+Node* build_kdtree(std::vector<Point>::iterator begin, std::vector<Point>::iterator end, int depth = 0) {
+
+  // If the point cloud is empty, return nullptr
+  if (begin >= end) {
+    return nullptr;
+  }
+
+  // Determine the axis based on the depth and find the middle point of the range
+  int axis = depth % 2;
+  auto mid = begin + (end - begin) / 2;
+
+  // Use std::nth_element to partition the points around the median.
+  // std::nth_element is a partial sorting algorithm that rearranges the elements in the range
+  // such that the element at the 'mid' position is the one that would be there if the entire range was sorted.
+  // All elements before 'mid' are no greater than mid, and all elements after 'mid' are no less than mid.
+  // This allows us to find the median point in linear time, which is efficient for large datasets.
+  std::nth_element(begin, mid, end, [axis](const Point& a, const Point& b) {
+    if (axis == 0) {
+      return a.x < b.x;  // Compare 'x' coordinates if axis is 0
+    } else {
+      return a.y < b.y;  // Compare 'y' coordinates if axis is 1
     }
-    p.core = p.neighbor_pts >= 3;
+  });
+
+  // Create a new node and assign the median point
+  Node* node = new Node;
+  node->point = *mid;
+
+  // Recursively build the left and right subtrees with a tbb::task_group
+  // a tbb::task_group is a task scheduler that can run tasks in parallel
+  // TODO there may be better and cleaner ways to parallelize this
+  tbb::task_group tg;
+  // the left children is started on a new thread
+  tg.run([&]() {
+    node->left = build_kdtree(begin, mid, depth + 1);
+  });
+  // the right children is started on the main thread
+  node->right = build_kdtree(mid + 1, end, depth + 1);
+  tg.wait(); // we wait for the left children to finish, before we continue
+
+  return node;
+}
+
+// Search for neighbors within a radius eps of a given point
+void radius_search(Node* node, const Point& search_point, double eps, std::vector<Point>& neighbors, int depth = 0) {
+  if (node == nullptr || neighbors.size() >= 3) { // if we have enough neighbors, we can stop
+    return;
+  }
+
+  // If the point is within eps of the search point, add it to the neighbors
+  double dist = distance(node->point, search_point);
+  if (dist <= eps) {
+    neighbors.push_back(node->point);
+  }
+
+  // Recursively search the left and right subtrees
+  int axis = depth % 2;
+  double diff;
+  if (axis == 0) {
+    diff = search_point.x - node->point.x;
+  } else {
+    diff = search_point.y - node->point.y;
+  }
+  double eps_sqr = eps * eps;
+
+  // Choose the near and far subtrees based on the search point
+  // Basically, if the search point is to the left of the node, the near subtree is the left subtree
+  Node* near;
+  Node* far;
+  if (diff <= 0) {
+    near = node->left;
+    far = node->right;
+  } else {
+    near = node->right;
+    far = node->left;
+  }
+
+  // Recursively search the near subtree
+  radius_search(near, search_point, eps, neighbors, depth + 1);
+
+  // If the search point is within eps of the node, search the far subtree
+  if (diff * diff < eps_sqr) {
+    radius_search(far, search_point, eps, neighbors, depth + 1);
   }
 }
 
-int find_clusters(std::vector<Point> &points, double eps)
-{
+// Find neighbors for each point in the point cloud
+void find_neighbors(std::vector<Point>& points, double eps) {
+  // Build a KD-tree from the points
+  Node* root = build_kdtree(points.begin(), points.end());
+
+  // Search for neighbors for each point in the point cloud
+  // We use tbb::parallel_for to parallelize the loop, as the loop iterations are independent
+  tbb::parallel_for(tbb::blocked_range<size_t>(0, points.size()), [&](const tbb::blocked_range<size_t>& r) {
+    for (size_t i = r.begin(); i < r.end(); ++i) {
+      Point& p = points[i];
+      std::vector<Point> neighbors;
+      radius_search(root, p, eps, neighbors);
+      p.neighbor_pts = neighbors.size();
+      p.core = p.neighbor_pts >= 3;
+    }
+  });
+
+  // Free the KD-tree nodes
+  std::function<void(Node*)> free_tree = [&](Node* node) {
+    if (node != nullptr) {
+      free_tree(node->left);
+      free_tree(node->right);
+      delete node;
+    }
+  };
+  free_tree(root);
+}
+
+// Function to expand a cluster from a given point
+void expand_cluster(Point& p, int cluster_id, double eps, std::vector<Point>& points) {
+  // Create a queue to hold points that are part of the cluster
+  std::queue<Point*> qu;
+  // Add the initial point to the queue
+  qu.push(&p);
+  // Assign the cluster ID to the initial point
+  p.cluster_id = cluster_id;
+
+  // Continue until there are no more points in the cluster
+  while (!qu.empty()) {
+    // Get the next point from the queue
+    Point* current = qu.front();
+    // Remove the point from the queue
+    qu.pop();
+    
+    // Iterate over all points
+    for (Point &q : points) {
+      // If the point has not been assigned to a cluster and is within 'eps' distance of the current point
+      if (q.cluster_id == -1 && current->x >= q.x - eps && current->x <= q.x + eps && current->y >= q.y - eps && current->y <= q.y + eps) { // here, instead of the distance function, we use a bounding box to filter the points, as this is faster, while sacraficing minimal accuracy
+        // Assign the point to the current cluster
+        q.cluster_id = cluster_id;
+        // If the point is a core point, add it to the queue, so so we can also expand the cluster from this point
+        if (q.core) {
+          qu.push(&q);
+        }
+      }
+    }
+  }
+}
+
+// Function to find all clusters in the given points
+int find_clusters(std::vector<Point>& points, double eps) {
+  // Initialize the cluster ID
   int actual_cluster_id = 0;
-  for (int i = 0; i < 10; i++)
-  {
-    for (Point &p : points)
-    {
-      if (p.core && p.cluster_id == -1)
-      {
-        p.cluster_id = actual_cluster_id;
-        break;
-      }
-    }
-    for (Point &p : points)
-    {
-      if (p.cluster_id == actual_cluster_id)
-      {
-        for (Point &q : points)
-        {
-          if (q.core && q.cluster_id == -1 && distance(p, q) <= eps)
-          {
-            q.cluster_id = actual_cluster_id;
-          }
-        }
-      }
-    }
-    actual_cluster_id++;
-  }
-  for (Point &p : points)
-  {
-    if (!p.core)
-    {
-      for (const Point &q : points)
-      {
-        if (q.core && q.cluster_id != -1 && distance(p, q) <= eps)
-        {
-          p.cluster_id = q.cluster_id;
-        }
-      }
+
+  // Iterate over all points
+  for (Point &p : points) {
+    // If the point is a core point and has not been assigned to a cluster
+    if (p.core && p.cluster_id == -1) {
+      // Expand a new cluster from the point
+      expand_cluster(p, actual_cluster_id, eps, points);
+      // Increment the cluster ID for the next cluster
+      actual_cluster_id++;
     }
   }
+
+  // Return the number of clusters found
   return actual_cluster_id;
 }
+
 class DbscanSpatial : public rclcpp::Node
 {
   rcl_interfaces::msg::SetParametersResult parametersCallback(const std::vector<rclcpp::Parameter> &parameters)
@@ -210,8 +329,16 @@ public:
   }
 
 private:
+  benchmark::Timer fullbenchmark;
+  benchmark::Timer bench1;
+  benchmark::Timer bench2;
+  benchmark::Timer bench3;
+  benchmark::Timer bench4;
   void lidar_callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr input_msg)
   {
+    fullbenchmark.start("fullbenchmark");
+    bench1.start("pcl data and cropbox", verbose2);
+
     visualization_msgs::msg::MarkerArray mark_array;
     // Convert to PCL data type
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
@@ -225,6 +352,10 @@ private:
     crop.setMin(Eigen::Vector4f(minX, minY, minZ, 1.0));
     crop.setMax(Eigen::Vector4f(maxX, maxY, maxZ, 1.0));
     crop.filter(*cloud);
+
+    bench1.finish();
+
+    bench2.start("find_neighbors", verbose2);
 
     if (verbose1)
     {
@@ -247,8 +378,15 @@ private:
     }
 
     find_neighbors(points, eps);
+
+    bench2.finish();
+
+    bench3.start("find_clusters", verbose2);
     // find clusters in cloud
     int num_of_clusters = find_clusters(points, eps);
+
+    bench3.finish();
+    bench4.start("publishing", verbose2);
 
     // create a vector of points for each cluster
     std::vector<double> center_x(num_of_clusters + 1), center_y(num_of_clusters + 1);
@@ -299,7 +437,12 @@ private:
     // Publish the data as a ROS message
     pub_lidar_->publish(output_msg);
     pub_marker_->publish(mark_array);
-  }
+
+    bench4.finish();
+
+    fullbenchmark.finish();
+
+  } // DbScanSpatial::lidar_callback
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_lidar_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_marker_;
@@ -308,7 +451,7 @@ private:
   float minX = -80.0, minY = -25.0, minZ = -2.0;
   float maxX = +80.0, maxY = +25.0, maxZ = -0.15;
   double eps = 3.5;
-  bool verbose1 = false, verbose2 = false, pub_undecided = false;
+  bool verbose1 = false, verbose2 = true, pub_undecided = false; // to disable benchmarking, set verbose2 to false
   std::string points_in_topic, points_out_topic, marker_out_topic;
   size_t count_;
 };
