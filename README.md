@@ -100,7 +100,7 @@ find /usr/include -name crop_box.h
 ## Images
 
 > [!NOTE]  
-> The following images shows two possible usage of clustering: an uban scenario and a race scenario.
+> The following images shows two possible usage of clustering: an urban scenario and a race scenario.
 > The first row shows a camera image that corresponds to the LIDAR image in the second row. In the third row an example is shown of the clustered LIDAR pointcloud with yellow.
 
 
