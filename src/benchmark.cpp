@@ -5,10 +5,10 @@
 namespace benchmark {
 
 void Timer::start(const std::string &name, bool verbose) {
-    if (!verbose) return; // if verbose is false, don't start the timer.
+    this->verbose = verbose;
+    if (!this->verbose) return; // if verbose is false, don't start the timer.
     this->start_time = std::chrono::high_resolution_clock::now();
     this->name = name;
-    this->verbose = verbose;
 }
 
 void Timer::finish() {

@@ -19,11 +19,11 @@ private:
     double avg = 0.0;
     std::vector<long> times;
     std::string name;
-    bool verbose = true;
+    bool verbose = false;
 
 public:
     // Start the timer. First argument is the name of the timer, second argument is an optional bool, and can stop the timer from starting if false
-    void start(const std::string &name, bool verbose = true);
+    void start(const std::string &name, bool verbose = false);
 
     // Finish the timer and print the results. 
     void finish();

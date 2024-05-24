@@ -336,7 +336,7 @@ private:
   benchmark::Timer bench4;
   void lidar_callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr input_msg)
   {
-    fullbenchmark.start("fullbenchmark");
+    fullbenchmark.start("fullbenchmark", verbose2);
     bench1.start("pcl data and cropbox", verbose2);
 
     visualization_msgs::msg::MarkerArray mark_array;
@@ -451,7 +451,7 @@ private:
   float minX = -80.0, minY = -25.0, minZ = -2.0;
   float maxX = +80.0, maxY = +25.0, maxZ = -0.15;
   double eps = 3.5;
-  bool verbose1 = false, verbose2 = true, pub_undecided = false; // to disable benchmarking, set verbose2 to false
+  bool verbose1 = false, verbose2 = false, pub_undecided = false;
   std::string points_in_topic, points_out_topic, marker_out_topic;
   size_t count_;
 };

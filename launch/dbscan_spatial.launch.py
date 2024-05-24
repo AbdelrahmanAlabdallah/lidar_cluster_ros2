@@ -20,6 +20,7 @@ def generate_launch_description():
                 {'points_out_topic': 'clustered_points'},
                 {'marker_out_topic': 'clustered_marker'},
                 {'verbose1': True},
+                {'verbose2': False},
             ]
         )
     ])
