@@ -81,6 +81,11 @@ target_link_libraries(dblane_f1s ${PCL_LIBRARIES})
 ament_target_dependencies(dblane_f1s  ${ament_dependencies} )
 target_compile_features(dblane_f1s PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
+add_executable(euclidean_grid src/euclidean_grid.cpp ${BENCHMARK_SOURCES})
+target_link_libraries(euclidean_grid ${PCL_LIBRARIES})
+ament_target_dependencies(euclidean_grid  ${ament_dependencies} )
+target_compile_features(euclidean_grid PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+
 
 install(DIRECTORY 
   launch
@@ -93,6 +98,7 @@ install(TARGETS
   dblane_spatial
   eucledian_spatial
   dblane_f1s
+  euclidean_grid
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
