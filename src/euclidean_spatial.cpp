@@ -33,7 +33,7 @@
 using namespace std::chrono_literals;
 using std::placeholders::_1;
 
-class EucledianSpatial : public rclcpp::Node
+class EuclideanSpatial : public rclcpp::Node
 {
   rcl_interfaces::msg::SetParametersResult parametersCallback(const std::vector<rclcpp::Parameter> &parameters)
   {
@@ -70,7 +70,7 @@ class EucledianSpatial : public rclcpp::Node
       if (param.get_name() == "points_in_topic")
       {
         points_in_topic = param.as_string();
-        sub_lidar_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(points_in_topic, rclcpp::SensorDataQoS().keep_last(1), std::bind(&EucledianSpatial::lidar_callback, this, std::placeholders::_1));
+        sub_lidar_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(points_in_topic, rclcpp::SensorDataQoS().keep_last(1), std::bind(&EuclideanSpatial::lidar_callback, this, std::placeholders::_1));
       }
       if (param.get_name() == "points_out_topic")
       {
@@ -113,7 +113,7 @@ class EucledianSpatial : public rclcpp::Node
   }
 
 public:
-  EucledianSpatial() : Node("eucledian_spatial"), count_(0)
+  EuclideanSpatial() : Node("euclidean_spatial"), count_(0)
   {
     this->declare_parameter<float>("minX", minX);
     this->declare_parameter<float>("minY", minY);
@@ -149,10 +149,10 @@ public:
     pub_lidar_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(points_out_topic, 10);
     pub_marker_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(marker_out_topic, 10);
     // TODO: QoS // rclcpp::SensorDataQoS().keep_last(1)
-    sub_lidar_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(points_in_topic, 10, std::bind(&EucledianSpatial::lidar_callback, this, std::placeholders::_1));
-    callback_handle_ = this->add_on_set_parameters_callback(std::bind(&EucledianSpatial::parametersCallback, this, std::placeholders::_1));
+    sub_lidar_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(points_in_topic, 10, std::bind(&EuclideanSpatial::lidar_callback, this, std::placeholders::_1));
+    callback_handle_ = this->add_on_set_parameters_callback(std::bind(&EuclideanSpatial::parametersCallback, this, std::placeholders::_1));
 
-    RCLCPP_INFO(this->get_logger(), "EucledianSpatial node has been started.");
+    RCLCPP_INFO(this->get_logger(), "EuclideanSpatial node has been started.");
     RCLCPP_INFO(this->get_logger(), "Subscribing to: '%s'", points_in_topic.c_str());
     RCLCPP_INFO(this->get_logger(), "Publishing to: '%s' and '%s'", points_out_topic.c_str(), marker_out_topic.c_str());
   }
@@ -288,7 +288,7 @@ private:
 int main(int argc, char *argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<EucledianSpatial>());
+  rclcpp::spin(std::make_shared<EuclideanSpatial>());
   rclcpp::shutdown();
   return 0;
 }

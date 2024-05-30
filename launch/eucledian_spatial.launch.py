@@ -13,7 +13,7 @@ def generate_launch_description():
         DeclareLaunchArgument("topic", description="a pointcloud topic to process", default_value="nonground"),
         Node(
             package='lidar_cluster',
-            executable='eucledian_spatial',
+            executable='euclidean_spatial',
             output='screen',
             parameters=[
                 {'points_in_topic': LaunchConfiguration("topic")},

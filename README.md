@@ -56,8 +56,8 @@ graph LR;
 | `dbscan_grid` | DBSAN | grid | DBSCAN voxel-grid-based implementation | |
 | `dblane_spatial` | DBlane | spatial| DBlane non-grid implementation | [flowchart](https://github.com/jkk-research/lidar_cluster_ros2/blob/ros2/notebooks/flowchart.md), [notebooks](https://github.com/jkk-research/lidar_cluster_ros2/tree/ros2/notebooks) |
 | `dblane_f1s` | DBlane | formula | DBlane formula 1 student implementation | [notebooks](https://github.com/jkk-research/lidar_cluster_ros2/tree/ros2/notebooks) |
-| `eucledian_spatial` | Eucledian | spatial| PCL implementation of Eucledian clustering non-grid implementation | [PCL docs](https://pointclouds.org/documentation/group__segmentation.html) |
-| `eucledian_grid` | Eucledian | grid| PCL implementation of Eucledian clustering voxel-grid-based implementation | [PCL docs](https://pointclouds.org/documentation/group__segmentation.html) |
+| `euclidean_spatial` | Euclidean | spatial| PCL implementation of Euclidean clustering non-grid implementation | [PCL docs](https://pointclouds.org/documentation/group__segmentation.html) |
+| `euclidean_grid` | Euclidean | grid| PCL implementation of Euclidean clustering voxel-grid-based implementation | [PCL docs](https://pointclouds.org/documentation/group__segmentation.html) |
 
 
 <details>

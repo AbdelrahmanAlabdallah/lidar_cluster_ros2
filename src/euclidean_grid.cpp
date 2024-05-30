@@ -1,4 +1,4 @@
-// Eucledian voxel grid clustering filter for Point Cloud data
+// Euclidean voxel grid clustering filter for Point Cloud data
 // Somewhat based on https://autowarefoundation.github.io/autoware.universe/main/perception/euclidean_cluster/ (Apache 2.0 License)
 
 #include <functional>
