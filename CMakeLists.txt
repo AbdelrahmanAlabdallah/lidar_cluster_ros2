@@ -56,6 +56,11 @@ set(BENCHMARK_SOURCES
   include/benchmark.hpp
 )
 
+set(OUTLINE_SOURCES
+  src/cluster_outline.cpp
+  include/cluster_outline.hpp
+)
+
 add_executable(dbscan_spatial src/dbscan_spatial.cpp ${BENCHMARK_SOURCES})
 target_link_libraries(dbscan_spatial ${PCL_LIBRARIES})
 ament_target_dependencies(dbscan_spatial  ${ament_dependencies} )
@@ -81,7 +86,7 @@ target_link_libraries(dblane_f1s ${PCL_LIBRARIES})
 ament_target_dependencies(dblane_f1s  ${ament_dependencies} )
 target_compile_features(dblane_f1s PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
-add_executable(euclidean_grid src/euclidean_grid.cpp ${BENCHMARK_SOURCES})
+add_executable(euclidean_grid src/euclidean_grid.cpp ${BENCHMARK_SOURCES} ${OUTLINE_SOURCES})
 target_link_libraries(euclidean_grid ${PCL_LIBRARIES})
 ament_target_dependencies(euclidean_grid  ${ament_dependencies} )
 target_compile_features(euclidean_grid PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
