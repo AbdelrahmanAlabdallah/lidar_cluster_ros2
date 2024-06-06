@@ -27,7 +27,7 @@
 // TBB
 #include <tbb/tbb.h>
 
-#include "cluster_outline.cpp"
+#include "cluster_outline.hpp"
 
 // Function to create a voxel grid from a point cloud
 pcl::PointCloud<pcl::PointXYZ>::Ptr createVoxelGrid(
