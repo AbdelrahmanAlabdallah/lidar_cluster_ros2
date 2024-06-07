@@ -1,4 +1,4 @@
-// Euclidean voxel grid clustering filter for Point Cloud data
+// Eucledian voxel grid clustering filter for Point Cloud data
 // Somewhat based on https://autowarefoundation.github.io/autoware.universe/main/perception/euclidean_cluster/ (Apache 2.0 License)
 
 #include <functional>
@@ -26,6 +26,8 @@
 #include "benchmark.hpp"
 // TBB
 #include <tbb/tbb.h>
+
+#include "cluster_outline.hpp"
 
 // Function to create a voxel grid from a point cloud
 pcl::PointCloud<pcl::PointXYZ>::Ptr createVoxelGrid(
@@ -238,6 +240,8 @@ public:
     sub_lidar_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(points_in_topic, 10, std::bind(&EuclideanGrid::lidar_callback, this, std::placeholders::_1));
     callback_handle_ = this->add_on_set_parameters_callback(std::bind(&EuclideanGrid::parametersCallback, this, std::placeholders::_1));
 
+    marker_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("hull_markers_topic", 10);
+
     RCLCPP_INFO(this->get_logger(), "EuclideanGrid node has been started.");
     RCLCPP_INFO(this->get_logger(), "Subscribing to: '%s'", points_in_topic.c_str());
     RCLCPP_INFO(this->get_logger(), "Publishing to: '%s' and '%s'", points_out_topic.c_str(), marker_out_topic.c_str());
@@ -245,9 +249,12 @@ public:
 
 private:
   benchmark::Timer fullbenchmark;
+  benchmark::Timer clustering;
+  benchmark::Timer convex_hull;
   void lidar_callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr input_msg)
   {
     fullbenchmark.start("fullbenchmark", verbose2);
+    clustering.start("clustering", verbose2);
 
     visualization_msgs::msg::MarkerArray mark_array;
 
@@ -333,14 +340,22 @@ private:
       }
     }
 
+    clustering.finish();
+    convex_hull.start("convex_hull", verbose2);
+
+    // Compute and draw an outline around the clusters
+    cluster_outline.computeOutline(cloud_filtered, hull_markers, 20);
+
+    convex_hull.finish();
+    fullbenchmark.finish();
+
     // Convert to ROS data type and publish
     sensor_msgs::msg::PointCloud2 output_msg;
     pcl::toROSMsg(*cloud_filtered, output_msg);
     output_msg.header.frame_id = input_msg->header.frame_id;
     pub_lidar_->publish(output_msg);
     pub_marker_->publish(mark_array);
-
-    fullbenchmark.finish();
+    marker_pub->publish(hull_markers);
 
   } // EuclideanGrid::lidar_callback
 
@@ -348,6 +363,12 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_marker_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_lidar_;
   OnSetParametersCallbackHandle::SharedPtr callback_handle_;
+
+  visualization_msgs::msg::MarkerArray hull_markers;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub;
+
+  outline::ClusterOutline cluster_outline;
+
   float minX = -80.0, minY = -25.0, minZ = -2.0;
   float maxX = +80.0, maxY = +25.0, maxZ = -0.15;
   float tolerance = 5;
