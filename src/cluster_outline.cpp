@@ -59,10 +59,8 @@ void ClusterOutline::addPointsIfNecessary(pcl::PointCloud<pcl::PointXYZ>::Ptr& h
 
 
 void ClusterOutline::computeOutline(pcl::PointCloud<pcl::PointXYZI>::Ptr& pointcloud, 
-                    visualization_msgs::msg::MarkerArray& hull_markers, int max_added_points) {
+                    visualization_msgs::msg::MarkerArray& hull_markers, int max_added_points, int max_clust_reached, std::string frame_id) {
 
-    // Clear the previous markers
-    hull_markers.markers.clear();
 
     // Map to store clusters, with the intensity as the key and the points as the value
     std::map<int, pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters;
@@ -93,23 +91,23 @@ void ClusterOutline::computeOutline(pcl::PointCloud<pcl::PointXYZI>::Ptr& pointc
         chull.reconstruct(*cloud_hull);
 
         // Add intermediate points if necessary
-        double max_distance = 2.0;  // maximum allowed distance between consecutive points 
+        double max_distance = 4.0;  // maximum allowed distance between consecutive points 
         int counter = 0;
         addPointsIfNecessary(cloud_hull, cluster.second, max_distance, counter, max_added_points);
 
         // Create a marker for this cluster
         visualization_msgs::msg::Marker hull_marker;
-        hull_marker.header.frame_id = "lexus3/os_center_a_laser_data_frame"; // Replace with your frame
+        hull_marker.header.frame_id = frame_id;
         hull_marker.header.stamp = rclcpp::Clock().now();
-        hull_marker.ns = "hull" + std::to_string(cluster_id);
+        hull_marker.ns = "hull";
         hull_marker.id = cluster_id++;
         hull_marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
         hull_marker.action = visualization_msgs::msg::Marker::ADD;
-        hull_marker.scale.x = 0.1;
+        hull_marker.scale.x = 0.2;
         hull_marker.color.a = 1.0;
-        hull_marker.color.r = 1.0; // make it white
-        hull_marker.color.g = 1.0;
-        hull_marker.color.b = 1.0;
+        hull_marker.color.r = 0.30; // 0.30 0.69 0.31 md_green_500 https://github.com/jkk-research/colors
+        hull_marker.color.g = 0.69;
+        hull_marker.color.b = 0.31;
 
         // Add the points of the Convex Hull to the marker
         for (const auto& point : cloud_hull->points) {
@@ -128,6 +126,19 @@ void ClusterOutline::computeOutline(pcl::PointCloud<pcl::PointXYZI>::Ptr& pointc
             hull_marker.points.push_back(p);
         }
         // Add the marker to the array
+        hull_markers.markers.push_back(hull_marker);
+    }
+    // Add markers for clusters that are not present in the current frame to avoid ghost markers   
+    visualization_msgs::msg::Marker hull_marker;
+    hull_marker.header.stamp = rclcpp::Clock().now();
+    hull_marker.header.frame_id = frame_id;
+    hull_marker.ns = "hull";
+    hull_marker.color.a = 0.0;    // alpha = 0.0 makes the marker invisible
+    hull_marker.scale.x = 0.2;
+    hull_marker.scale.y = 0.2;
+    hull_marker.scale.z = 0.2;
+    for(int i = clusters.size() + 1 ; i < max_clust_reached; i++) {
+        hull_marker.id = cluster_id++;
         hull_markers.markers.push_back(hull_marker);
     }
 
