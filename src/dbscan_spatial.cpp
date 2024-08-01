@@ -24,6 +24,8 @@
 // TBB
 #include <tbb/tbb.h>
 
+#include "cluster_outline.hpp"
+
 // Point class, which stores the x and y coordinates of a point, the number of neighbors, whether it is a core point, and the cluster ID
 class Point {
 public:
@@ -429,6 +431,18 @@ private:
       }
     }
 
+    // Add markers for clusters that are not present in the current frame to avoid ghost markers
+    for(int i = num_of_clusters + 1; i <= max_clust_reached; i++) {
+      visualization_msgs::msg::Marker center_marker;
+      init_center_marker(center_marker, 0, 0, i);
+      center_marker.header.frame_id = input_msg->header.frame_id;
+      center_marker.header.stamp = this->now();
+      center_marker.color.a = 0.0;
+      mark_array.markers.push_back(center_marker);
+    }
+
+    cluster_outline.computeOutline(cloud_filtered, mark_array, 20, max_clust_reached, input_msg->header.frame_id);
+
     // Convert to ROS data type
     sensor_msgs::msg::PointCloud2 output_msg;
     pcl::toROSMsg(*cloud_filtered, output_msg);
@@ -437,6 +451,7 @@ private:
     // Publish the data as a ROS message
     pub_lidar_->publish(output_msg);
     pub_marker_->publish(mark_array);
+
 
     bench4.finish();
 
@@ -448,12 +463,14 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_marker_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_lidar_;
   OnSetParametersCallbackHandle::SharedPtr callback_handle_;
+  outline::ClusterOutline cluster_outline;
   float minX = -80.0, minY = -25.0, minZ = -2.0;
   float maxX = +80.0, maxY = +25.0, maxZ = -0.15;
   double eps = 3.5;
   bool verbose1 = false, verbose2 = false, pub_undecided = false;
   std::string points_in_topic, points_out_topic, marker_out_topic;
   size_t count_;
+  int max_clust_reached = 0;
 };
 
 int main(int argc, char *argv[])
