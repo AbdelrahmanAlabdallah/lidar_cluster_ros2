@@ -3,6 +3,9 @@ LIDAR pointcloud clustering in `ROS 2` `Humble`
 
 [![Static Badge](https://img.shields.io/badge/ROS_2-Humble-34aec5)](https://docs.ros.org/en/humble/)
 
+<center>
+<img src="img/lidar_cluster01.png" width="80%"> 
+</center>
 
 ## Build this `ROS 2` package
 
@@ -31,6 +34,9 @@ or with optimized build:
 ``` bash
 MAKEFLAGS="-j4" colcon build --packages-select lidar_cluster --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
+
+> [!TIP]
+> There is a detailded decription how to make this package work with ground segmentation: [jkk-research.github.io/workshops/clustering_a](https://jkk-research.github.io/workshops/clustering_a/)
 
 ## ROS 2 graph
 

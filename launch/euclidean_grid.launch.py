@@ -19,7 +19,7 @@ def generate_launch_description():
                 {'points_in_topic': LaunchConfiguration("topic")},
                 {'points_out_topic': 'clustered_points'},
                 {'marker_out_topic': 'clustered_marker'},
-                {'verbose1': True},
+                {'verbose1': False},
                 {'verbose2': False},
             ]
         )
