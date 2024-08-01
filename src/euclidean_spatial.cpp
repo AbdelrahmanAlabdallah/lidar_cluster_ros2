@@ -30,6 +30,8 @@
 // ROS package
 #include "lidar_cluster/marker.hpp"
 
+#include "cluster_outline.hpp"
+
 using namespace std::chrono_literals;
 using std::placeholders::_1;
 
@@ -260,6 +262,20 @@ private:
       mark_array.markers.push_back(center_marker);     
     }
 
+    int num_of_clusters = clusters.size();
+
+    // Add markers for clusters that are not present in the current frame to avoid ghost markers
+    for(int i = num_of_clusters + 1; i <= max_clust_reached; i++) {
+      visualization_msgs::msg::Marker center_marker;
+      init_center_marker(center_marker, 0, 0, i);
+      center_marker.header.frame_id = input_msg->header.frame_id;
+      center_marker.header.stamp = this->now();
+      center_marker.color.a = 0.0;
+      mark_array.markers.push_back(center_marker);
+    }
+
+    cluster_outline.computeOutline(cloud_cluster, mark_array, 20, max_clust_reached, input_msg->header.frame_id);
+
     // Convert to ROS data type
     sensor_msgs::msg::PointCloud2 output_msg;
     pcl::toROSMsg(*cloud_cluster, output_msg);
@@ -274,10 +290,12 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_marker_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_lidar_;
   OnSetParametersCallbackHandle::SharedPtr callback_handle_;
+  outline::ClusterOutline cluster_outline;
+
   float minX = -80.0, minY = -25.0, minZ = -2.0;
   float maxX = 80.0, maxY = +25.0, maxZ = -0.15;
   float tolerance_ = 0.02;
-  int min_cluster_size_ = 10;
+  int min_cluster_size_ = 10, max_clust_reached = 0;
   int max_cluster_size_ = 500;
   bool use_height_ = false;
   bool verbose1 = false, verbose2 = false;
