@@ -115,3 +115,19 @@ find /usr/include -name crop_box.h
 <img src="img/lidar_cluster_a2_urban.gif" width="100%"> | <img src="img/lidar_cluster_a1_race.gif" width="100%"> 
 <img src="img/lidar_cluster_b2_urban.gif" width="100%"> | <img src="img/lidar_cluster_b1_race.gif" width="100%">
 <img src="img/lidar_cluster_c2_urban.gif" width="100%"> | <img src="img/lidar_cluster_c1_race.gif" width="100%"> 
+
+
+# Citation
+
+If you use any of this code please consider citing the [paper](https://ieeexplore.ieee.org/document/10607072):
+
+``` bibtex
+@INPROCEEDINGS{10607072,
+  author={Unger, Miklós and Horváth, Ernő and Pup, Dániel and Pozna, Claudiu Radu},
+  booktitle={2024 IEEE International Conference on Mobility, Operations, Services and Technologies (MOST)}, 
+  title={Towards Robust LIDAR Lane Clustering for Autonomous Vehicle Perception in ROS 2}, 
+  year={2024},
+  pages={229-234},
+  keywords={Laser radar;Lane detection;Source coding;Clustering algorithms;Robustness;Pattern recognition;Autonomous vehicles;self-driving;autonomous;point cloud;LIDAR;proceeding;filter;geometric patterns},
+  doi={10.1109/MOST60774.2024.00031}}
+```
