@@ -20,6 +20,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/search/kdtree.h>
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/common/point_tests.h>
 // ROS package
 #include "lidar_cluster/marker.hpp"
 // Benchmarking
@@ -278,6 +279,15 @@ private:
     {
       // Print the length of the pointcloud
       RCLCPP_INFO_STREAM(this->get_logger(), "PointCloud in: " << original_size << " reduced size before cluster: " << cloud->width * cloud->height);
+    }
+
+    // if any point in the pointcloud is not a proper number, modify that value to zero
+    for (auto &point : cloud_xyz->points) {
+        if (!pcl::isFinite(point)) {
+            point.x = 0.0;
+            point.y = 0.0;
+            point.z = 0.0;
+        }
     }
 
     // Create voxel grid and project to 2D
