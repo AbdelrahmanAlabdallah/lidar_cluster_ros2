@@ -200,7 +200,7 @@ class EuclideanGrid : public rclcpp::Node
   }
 
 public:
-  EuclideanGrid() : Node("dbscan_spatial"), count_(0)
+  EuclideanGrid() : Node("euclidean_grid"), count_(0)
   {
     this->declare_parameter<float>("minX", minX);
     this->declare_parameter<float>("minY", minY);
